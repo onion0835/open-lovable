@@ -27,6 +27,8 @@ ANTHROPIC_API_KEY=your_anthropic_api_key  # Get from https://console.anthropic.c
 OPENAI_API_KEY=your_openai_api_key  # Get from https://platform.openai.com (GPT-5)
 GEMINI_API_KEY=your_gemini_api_key  # Get from https://aistudio.google.com/app/apikey
 GROQ_API_KEY=your_groq_api_key  # Get from https://console.groq.com (Fast inference - Kimi K2 recommended)
+# Get yours at https://siliconflow.cn
+SILICONFLOW_API_KEY=your_siliconflow_api_key_here
 ```
 
 3. **Run**
