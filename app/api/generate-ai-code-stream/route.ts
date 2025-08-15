@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createGroq } from '@ai-sdk/groq';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText } from 'ai';
 import type { SandboxState } from '@/types/sandbox';
@@ -26,6 +27,12 @@ const googleGenerativeAI = createGoogleGenerativeAI({
 
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+});
+
+const siliconflow = createOpenAICompatible({
+  name: 'siliconflow',
+  apiKey: process.env.SILICONFLOW_API_KEY,
+  baseURL: 'https://api.siliconflow.cn/v1',
 });
 
 // Helper function to analyze user preferences from conversation history
@@ -1155,10 +1162,21 @@ CRITICAL: When files are provided in the context:
         const isAnthropic = model.startsWith('anthropic/');
         const isGoogle = model.startsWith('google/');
         const isOpenAI = model.startsWith('openai/gpt-5');
-        const modelProvider = isAnthropic ? anthropic : (isOpenAI ? openai : (isGoogle ? googleGenerativeAI : groq));
+        const isSiliconFlow = model.startsWith('siliconflow/');
+        
+        // Default to SiliconFlow if no specific provider is specified and SiliconFlow API key is available
+        const defaultProvider = process.env.SILICONFLOW_API_KEY ? siliconflow : groq;
+        const defaultModel = process.env.SILICONFLOW_API_KEY ? 'Qwen/Qwen2.5-Coder-7B-Instruct' : model;
+        
+        const modelProvider = isAnthropic ? anthropic : 
+                             (isOpenAI ? openai : 
+                             (isGoogle ? googleGenerativeAI : 
+                             (isSiliconFlow ? siliconflow : defaultProvider)));
         const actualModel = isAnthropic ? model.replace('anthropic/', '') : 
                            (model === 'openai/gpt-5') ? 'gpt-5' :
-                           (isGoogle ? model.replace('google/', '') : model);
+                           (isGoogle ? model.replace('google/', '') : 
+                           (isSiliconFlow ? model.replace('siliconflow/', '') : 
+                           (process.env.SILICONFLOW_API_KEY && !isAnthropic && !isOpenAI && !isGoogle && !isSiliconFlow ? defaultModel : model)));
 
         // Make streaming API call with appropriate provider
         const streamOptions: any = {
@@ -1595,7 +1613,7 @@ Provide the complete file content without any truncation. Include all necessary 
                 }
                 
                 const completionResult = await streamText({
-                  model: completionClient(modelMapping[model] || model),
+                  model: completionClient(actualModel),
                   messages: [
                     { 
                       role: 'system', 
@@ -1603,9 +1621,9 @@ Provide the complete file content without any truncation. Include all necessary 
                     },
                     { role: 'user', content: completionPrompt }
                   ],
-                  temperature: isGPT5 ? undefined : appConfig.ai.defaultTemperature,
+                  temperature: model.startsWith('openai/gpt-5') ? undefined : appConfig.ai.defaultTemperature,
                   maxTokens: appConfig.ai.truncationRecoveryMaxTokens
-                });
+                } as any);
                 
                 // Get the full text from the stream
                 let completedContent = '';
