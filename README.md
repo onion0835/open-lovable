@@ -1,4 +1,5 @@
 # Open Lovable
+集成siliconflow 国产模型 Qwen2.5-7B-Instruct 
 
 Chat with AI to build React apps instantly. An example app made by the [Firecrawl](https://firecrawl.dev/?ref=open-lovable-github) team. For a complete cloud solution, check out [Lovable.dev ❤️](https://lovable.dev/).
 
